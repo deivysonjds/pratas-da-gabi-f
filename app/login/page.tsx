@@ -18,7 +18,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold mb-1">Bem-vindo de volta</h1>
           <p className="text-gray-500 text-sm mb-6">Acesse seu espaço de vendas.</p>
 
-          <form onSubmit={(e) => { e.preventDefault(); router.push('/'); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); router.push('/admin'); }} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Login</label>
               <input
