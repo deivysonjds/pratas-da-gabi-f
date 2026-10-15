@@ -37,18 +37,18 @@ export default function ClientesPage() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white border rounded-lg p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="bg-white border border-black/10 rounded-lg p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
         <div>
           <label className="block text-xs font-medium mb-1">Nome</label>
-          <input placeholder="Buscar por nome" className="w-full border rounded-md px-3 py-2 text-sm" />
+          <input placeholder="Buscar por nome" className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" />
         </div>
         <div>
           <label className="block text-xs font-medium mb-1">CPF</label>
-          <input placeholder="Digite o CPF" className="w-full border rounded-md px-3 py-2 text-sm" />
+          <input placeholder="Digite o CPF" className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" />
         </div>
         <div>
           <label className="block text-xs font-medium mb-1">E-mail</label>
-          <input placeholder="Buscar por e-mail" className="w-full border rounded-md px-3 py-2 text-sm" />
+          <input placeholder="Buscar por e-mail" className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" />
         </div>
         <div className="flex items-end">
           <button className="bg-blue-300 hover:bg-blue-400 text-blue-900 px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 w-full md:w-auto justify-center">
@@ -62,9 +62,9 @@ export default function ClientesPage() {
         <span className="text-xs text-gray-500">Mais recentes primeiro</span>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-x-auto">
+      <div className="bg-white rounded-lg border border-black/10 overflow-x-auto">
         <table className="w-full text-left text-sm min-w-[700px]">
-          <thead className="bg-gray-50 text-gray-500 font-medium border-b">
+          <thead className="bg-gray-50 text-gray-500 font-medium border-b border-black/10">
             <tr>
               <th className="px-6 py-3">Nome</th>
               <th className="px-6 py-3">CPF</th>
@@ -77,7 +77,7 @@ export default function ClientesPage() {
             {clients.map((c) => {
               const initials = c.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
               return (
-                <tr key={c.id} className="hover:bg-gray-50">
+                <tr key={c.id} className="hover:bg-gray-50 border-black/10">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600">
@@ -115,7 +115,7 @@ export default function ClientesPage() {
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 mt-4 text-sm text-gray-500">
         <div className="flex items-center gap-2">
           <span>Por página</span>
-          <select className="border rounded px-2 py-1"><option>10</option></select>
+          <select className="border border-black/10 rounded px-2 py-1"><option>10</option></select>
           <span>1–{clients.length} de {clients.length}</span>
         </div>
         <div className="flex items-center gap-1">
@@ -147,7 +147,7 @@ export default function ClientesPage() {
         confirmLabel="Sim, excluir cliente"
       >
         {deleting && (
-          <div className="border rounded-lg p-4">
+          <div className="border border-black/10 rounded-lg p-4">
             <p className="font-medium">{deleting.name}</p>
             <p className="text-xs text-gray-500">CPF: {deleting.cpf}</p>
             <p className="text-xs text-gray-500">{deleting.email}</p>

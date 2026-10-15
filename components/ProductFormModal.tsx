@@ -56,7 +56,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
           <label className="block text-sm font-medium mb-1">Nome do produto *</label>
           <input
             name="name" value={form.name} onChange={handleChange} required
-            className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            className="w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
           />
         </div>
 
@@ -64,7 +64,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
           <label className="block text-sm font-medium mb-1">Descrição *</label>
           <textarea
             name="description" value={form.description} onChange={handleChange} rows={3} required
-            className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            className="w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
           />
         </div>
 
@@ -74,7 +74,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
             <input
               name="price" type="number" step="0.01" value={form.price} onChange={handleChange} required
               placeholder="R$ 0,00"
-              className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
           </div>
           <div>
@@ -83,7 +83,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
             </label>
             <input
               name="stock" type="number" value={form.stock} onChange={handleChange}
-              className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
           </div>
         </div>
@@ -92,7 +92,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
           <label className="block text-sm font-medium mb-1">Categoria</label>
           <select
             name="category" value={form.category} onChange={handleChange}
-            className="w-full border rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            className="w-full border border-black/10 rounded-md px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-400 focus:outline-none"
           >
             <option>Brincos</option>
             <option>Colares</option>
@@ -103,7 +103,7 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
 
         <div>
           <label className="block text-sm font-medium mb-1">Imagem do produto</label>
-          <div className="border-2 border-dashed rounded-lg p-4 flex items-center gap-4">
+          <div className="border-2 border-dashed border-black/10 rounded-lg p-4 flex items-center gap-4">
             {preview ? (
               <img src={preview} alt="Preview" className="w-16 h-16 object-cover rounded" />
             ) : (
@@ -127,8 +127,8 @@ export function ProductFormModal({ isOpen, onClose, initialData }: ProductFormMo
             : '* Campos obrigatórios. O produto aparecerá na vitrine após o cadastro.'}
         </p>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50">
+        <div className="flex justify-end gap-3 pt-4 border-t border-black/10">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-black/10 rounded-md text-sm font-medium hover:bg-gray-50">
             Cancelar
           </button>
           <button type="submit" className="px-4 py-2 bg-blue-300 hover:bg-blue-400 text-blue-900 rounded-md text-sm font-medium">

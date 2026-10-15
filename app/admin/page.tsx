@@ -40,11 +40,11 @@ export default function DashboardPage() {
         <div className="flex gap-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Data de início</label>
-            <input type="text" defaultValue="01/09/2026" className="border rounded-md px-3 py-2 text-sm bg-white w-32" />
+            <input type="text" defaultValue="01/09/2026" className="border border-black/10 rounded-md px-3 py-2 text-sm bg-white w-32" />
           </div>
           <div>
             <label className="block text-xs text-gray-500 mb-1">Data de fim</label>
-            <input type="text" defaultValue="30/09/2026" className="border rounded-md px-3 py-2 text-sm bg-white w-32" />
+            <input type="text" defaultValue="30/09/2026" className="border border-black/10 rounded-md px-3 py-2 text-sm bg-white w-32" />
           </div>
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function DashboardPage() {
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white border rounded-lg p-5">
+          <div key={stat.label} className="bg-white border border-black/10 rounded-lg p-5">
             <div className="flex justify-between items-start mb-3">
               <span className="text-sm text-gray-500">{stat.label}</span>
               <stat.icon size={16} className="text-blue-500" />
@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-white border rounded-lg p-6">
+        <div className="lg:col-span-2 bg-white border border-black/10 rounded-lg p-6">
           <h2 className="font-semibold mb-1">Evolução do faturamento</h2>
           <p className="text-xs text-gray-500 mb-4">Vendas pagas · Setembro de 2026</p>
 
@@ -88,7 +88,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white border rounded-lg p-6">
+        <div className="bg-white border border-black/10 rounded-lg p-6">
           <h2 className="font-semibold mb-1">Produtos mais vendidos</h2>
           <p className="text-xs text-gray-500 mb-4">Quantidade de vendas pagas</p>
 
@@ -112,13 +112,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Últimas vendas */}
-      <div className="bg-white border rounded-lg p-6">
+      <div className="bg-white border border-black/10 rounded-lg p-6">
         <h2 className="font-semibold mb-1">Últimas vendas</h2>
         <p className="text-xs text-gray-500 mb-4">Movimentações recentes do seu negócio</p>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm min-w-[600px]">
-            <thead className="text-gray-500 font-medium border-b">
+            <thead className="text-gray-500 font-medium border-b border-black/10">
               <tr>
                 <th className="py-3">Cliente</th>
                 <th className="py-3">Produto</th>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
             </thead>
             <tbody className="divide-y">
               {mockSales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50">
+                <tr key={sale.id} className="hover:bg-gray-50 border-black/10">
                   <td className="py-3 font-medium">{sale.clientName}</td>
                   <td className="py-3">{sale.items[0].name}</td>
                   <td className="py-3">R$ {sale.items[0].price.toFixed(2).replace('.', ',')}</td>

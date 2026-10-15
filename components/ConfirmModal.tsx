@@ -36,10 +36,10 @@ export function ConfirmModal({
         <p>{warning}</p>
       </div>
 
-      <div className="flex justify-end gap-3 pt-6 mt-4 border-t">
+      <div className="flex justify-end gap-3 pt-6 mt-4 border-t border-black/10">
         <button
           onClick={onClose}
-          className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50"
+          className="px-4 py-2 border border-black/10 rounded-md text-sm font-medium hover:bg-gray-50"
         >
           Cancelar
         </button>

@@ -87,6 +87,38 @@ export const mockSales: Sale[] = [
     total: 407,
     date: '30/09/2026',
     status: 'pendente pagamento',
+    paymentMethod: 'parcelado',
+    customer: {
+      cpf: 'teste',
+      email: 'teste',
+      phone: 'teste',
+    },
+    installments: [{
+      number: 1,
+      dueLabel: 'teste',
+      amount: 50,
+      paid: true},
+      {
+      number: 2,
+      dueLabel: 'teste',
+      amount: 50,
+      paid: true},
+      {
+      number: 3,
+      dueLabel: 'teste',
+      amount: 50,
+      paid: true},
+      {
+      number: 4,
+      dueLabel: 'teste',
+      amount: 50,
+      paid: true},
+      {
+      number: 5,
+      dueLabel: 'teste',
+      amount: 50,
+      paid: true}
+    ]
   },
   {
     id: '#0158',
