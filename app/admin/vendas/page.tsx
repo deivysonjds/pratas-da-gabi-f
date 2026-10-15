@@ -5,24 +5,6 @@ import { mockProducts, mockSales } from '@/data/mock';
 import { Sale, SaleItem } from '@/types';
 import { SaleSuccessModal } from '@/components/SaleSuccessModal';
 
-// Estende o tipo Sale localmente para incluir pagamento e parcelas
-type Installment = {
-  number: number;
-  dueLabel: string;
-  amount: number;
-  paid: boolean;
-};
-
-type SaleWithPayment = Sale & {
-  paymentMethod?: string;
-  customer?: {
-    cpf?: string;
-    email?: string;
-    phone?: string;
-  };
-  installments?: Installment[];
-};
-
 export default function VendasPage() {
   const [selectedProduct, setSelectedProduct] = useState(mockProducts[0]);
   const [items, setItems] = useState<SaleItem[]>([
@@ -33,10 +15,10 @@ export default function VendasPage() {
   const [showHistory, setShowHistory] = useState(true);
 
   // Estado das vendas (para permitir atualizar parcelas)
-  const [sales, setSales] = useState<SaleWithPayment[]>(mockSales as SaleWithPayment[]);
+  const [sales, setSales] = useState<Sale[]>(mockSales as Sale[]);
 
   // Venda selecionada para ver detalhes
-  const [selectedSale, setSelectedSale] = useState<SaleWithPayment | null>(null);
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   const total = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 

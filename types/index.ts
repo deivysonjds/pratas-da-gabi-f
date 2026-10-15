@@ -32,4 +32,18 @@ export interface Sale {
   total: number;
   date: string;
   status: 'pago' | 'pendente pagamento' | 'cancelado';
+  paymentMethod?: string;
+  customer?: {
+    cpf?: string;
+    email?: string;
+    phone?: string;
+  };
+  installments?: Installment[];
 }
+
+type Installment = {
+  number: number;
+  dueLabel: string;
+  amount: number;
+  paid: boolean;
+};
