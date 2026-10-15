@@ -9,7 +9,7 @@ const WHATSAPP_NUMBER = '5581988993441'; // Substitua pelo número real
 const CART_STORAGE_KEY = 'elo_cart';
 
 type CartItem = {
-  id: string;
+  id: number;
   name: string;
   price: number;
   quantity: number;
@@ -114,9 +114,9 @@ export default function VitrinePage() {
       ? mockProducts
       : mockProducts.filter((p) => p.category === activeCategory);
 
-  const getQty = (id: string) => selectedQty[id] ?? 1;
+  const getQty = (id: number) => selectedQty[id] ?? 1;
 
-  const changeQty = (id: string, delta: number) => {
+  const changeQty = (id: number, delta: number) => {
     setSelectedQty((prev) => {
       const current = prev[id] ?? 1;
       const next = Math.max(1, current + delta);
@@ -144,7 +144,7 @@ export default function VitrinePage() {
     setIsCartOpen(true);
   };
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = (id: number, delta: number) => {
     setCart((prev) =>
       prev
         .map((item) =>
@@ -154,7 +154,7 @@ export default function VitrinePage() {
     );
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: number) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
