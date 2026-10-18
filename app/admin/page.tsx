@@ -15,7 +15,18 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dataInicio, setDataInicio] = useState("");
+
+useEffect(() => {
+  const hoje = new Date();
+  const dataLocal = [
+    hoje.getFullYear(),
+    String(hoje.getMonth() + 1).padStart(2, "0"),
+    String(hoje.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  setDataInicio(dataLocal);
+}, []);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
