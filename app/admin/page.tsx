@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(() => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); });
-  const [dataInicio, setDataInicio] = useState("");
+  const [endDate, setEndDate] = useState("");
 
 useEffect(() => {
   const hoje = new Date();
@@ -25,9 +25,8 @@ useEffect(() => {
     String(hoje.getDate()).padStart(2, "0"),
   ].join("-");
 
-  setDataInicio(dataLocal);
+  setEndDate(dataLocal);
 }, []);
-
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
