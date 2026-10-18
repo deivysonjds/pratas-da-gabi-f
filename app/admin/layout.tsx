@@ -1,9 +1,8 @@
-import '../globals.css';
 import { Sidebar } from '@/components/Sidebar';
 
 export const metadata = {
-  title: 'Elo Studio',
-  description: 'Gestão de vendas e produtos',
+  title: 'Pratas da Gabi',
+  description: 'Gestão de vendas e produtos da Pratas da Gabi',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

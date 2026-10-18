@@ -4,7 +4,9 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Package, ShoppingCart, Store, Menu, X, LogOut,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { logout } from '@/services/api';
 
 const menuItems = [
   { name: 'Visão geral', path: '/admin/', icon: LayoutDashboard },
@@ -15,17 +17,30 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const [userName, setUserName] = useState('Administrador');
+
+  useEffect(() => {
+    try {
+      const user = JSON.parse(sessionStorage.getItem('authUser') || 'null');
+      if (user?.name) setUserName(user.name);
+    } catch { /* ignora dados locais inválidos */ }
+  }, []);
+
+  async function handleLogout() {
+    try { await logout(); } catch { /* o cookie será invalidado pelo servidor quando possível */ }
+    router.replace('/login');
+    router.refresh();
+  }
 
   return (
     <>
       {/* Topbar mobile */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-black/10 z-50 flex items-center justify-between p-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-            e
-          </div>
-          <span className="font-bold text-xl">elo</span>
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">P</div>
+          <span className="font-bold text-xl">Pratas da Gabi</span>
         </Link>
         <button onClick={() => setIsOpen(!isOpen)} className="p-2">
           {isOpen ? <X size={22} /> : <Menu size={22} />}
@@ -47,17 +62,15 @@ export function Sidebar() {
         }`}
       >
         <div className="hidden md:flex items-center gap-2 p-6 border-b border-black/10">
-          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-            e
-          </div>
-          <span className="font-bold text-xl">elo</span>
+          <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">P</div>
+          <span className="font-bold text-xl">Pratas da Gabi</span>
         </div>
 
         <div className="p-4 mt-14 md:mt-0">
           <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">
             Espaço de trabalho
           </p>
-          <p className="text-sm font-semibold mb-4">Elo Studio</p>
+          <p className="text-sm font-semibold mb-4">Pratas da Gabi</p>
 
           <nav className="space-y-1">
             {menuItems.map((item) => {
@@ -95,10 +108,10 @@ export function Sidebar() {
             MC
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium">Marina Costa</p>
+            <p className="text-sm font-medium truncate">{userName}</p>
             <p className="text-xs text-gray-500">Administradora</p>
           </div>
-          <button className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleLogout} aria-label="Sair" title="Sair" className="text-gray-400 hover:text-gray-600">
             <LogOut size={16} />
           </button>
         </div>

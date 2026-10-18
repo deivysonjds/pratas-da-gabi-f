@@ -7,6 +7,7 @@ export interface Product {
   stock: number;
   category: string;
   imageUrl: string;
+  categoryId?: number;
 }
 
 export interface Client {
@@ -14,6 +15,7 @@ export interface Client {
   name: string;
   cpf: string;
   email: string;
+  contact?: string;
   createdAt: string;
 }
 

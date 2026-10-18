@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Pratas da Gabi
 
-## Getting Started
+Next.js App Router. O frontend chama a API por `/backend/api`; o rewrite em `next.config.ts` encaminha as requisições para o backend e mantém os cookies de autenticação HttpOnly no domínio do frontend.
 
-First, run the development server:
+## Local
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. `npm install`
+2. Copie `.env.example` para `.env.local` (ou configure as variáveis no ambiente):
+   - `NEXT_PUBLIC_API_URL=/backend/api`
+   - `API_PROXY_TARGET=http://localhost:3333`
+3. Inicie a API na porta 3333 e execute `npm run dev`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Produção
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Configure `API_PROXY_TARGET` com a URL raiz do backend, por exemplo `https://seu-backend.onrender.com`, e mantenha `NEXT_PUBLIC_API_URL=/backend/api`. No backend, adicione a origem exata do frontend em `CORS_ORIGINS`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O arquivo `proxy.ts` protege `/admin/*` verificando os cookies de sessão. A autorização real permanece no backend, que valida a assinatura e a expiração do JWT em todas as rotas administrativas. A renovação usa o refresh token rotativo por cookie HttpOnly.

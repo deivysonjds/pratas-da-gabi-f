@@ -1,9 +1,10 @@
 'use client';
 import { Search, ShoppingBag, ArrowUpRight, X, Plus, Minus, Trash2 } from 'lucide-react';
-import { mockProducts } from '@/data/mock';
-import { useState, useEffect } from 'react';
-
-const categories = ['Todas', 'Brincos', 'Colares', 'Pulseiras'];
+import { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import { Product } from '@/types';
+import { api } from '@/services/api';
+import { mapProduct, unwrapList } from '@/services/mappers';
 
 const WHATSAPP_NUMBER = '5581988993441'; // Substitua pelo número real
 const CART_STORAGE_KEY = 'elo_cart';
@@ -68,6 +69,11 @@ const isValidPhone = (phone: string) => {
 };
 
 export default function VitrinePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState('');
+  const [orderError, setOrderError] = useState('');
+  const [submittingOrder, setSubmittingOrder] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -84,6 +90,15 @@ export default function VitrinePage() {
     phone: '',
   });
 
+  useEffect(() => {
+    let active = true;
+    api.get('/products?limit=100')
+      .then(response => { if (active) setProducts(unwrapList(response.data).map(mapProduct)); })
+      .catch(error => { if (active) setProductsError(axios.isAxiosError(error) ? error.response?.data?.message || 'Não foi possível carregar os produtos.' : 'Não foi possível carregar os produtos.'); })
+      .finally(() => { if (active) setProductsLoading(false); });
+    return () => { active = false; };
+  }, []);
+
   // Carrega o carrinho do localStorage ao montar
   useEffect(() => {
     try {
@@ -99,6 +114,16 @@ export default function VitrinePage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isHydrated || productsLoading || productsError) return;
+    setCart(current => current
+      .map(item => {
+        const currentProduct = products.find(product => product.id === item.id);
+        return currentProduct ? { ...item, name: currentProduct.name, price: currentProduct.price } : null;
+      })
+      .filter((item): item is CartItem => item !== null));
+  }, [products, productsLoading, productsError, isHydrated]);
+
   // Salva o carrinho sempre que ele mudar
   useEffect(() => {
     if (!isHydrated) return;
@@ -109,10 +134,8 @@ export default function VitrinePage() {
     }
   }, [cart, isHydrated]);
 
-  const filtered =
-    activeCategory === 'Todas'
-      ? mockProducts
-      : mockProducts.filter((p) => p.category === activeCategory);
+  const categories = useMemo(() => ['Todas', ...Array.from(new Set(products.map(product => product.category).filter(Boolean)))], [products]);
+  const filtered = activeCategory === 'Todas' ? products : products.filter((product) => product.category === activeCategory);
 
   const getQty = (id: number) => selectedQty[id] ?? 1;
 
@@ -124,7 +147,7 @@ export default function VitrinePage() {
     });
   };
 
-  const addToCart = (product: (typeof mockProducts)[number]) => {
+  const addToCart = (product: Product) => {
     const qty = getQty(product.id);
 
     setCart((prev) => {
@@ -212,60 +235,56 @@ export default function VitrinePage() {
   };
 
   const finalizeOrder = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || submittingOrder) return;
     if (!validate()) return;
-
-    const orderId = `ELO-${Date.now().toString().slice(-6)}`;
-
-    const order = {
-      id: orderId,
-      customer,
-      items: cart,
-      total: cartTotal,
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-    };
+    setOrderError('');
+    setSubmittingOrder(true);
+    const whatsappWindow = window.open('about:blank', '_blank');
 
     try {
-      const existingOrders = JSON.parse(localStorage.getItem('elo_orders') || '[]');
-      existingOrders.push(order);
-      localStorage.setItem('elo_orders', JSON.stringify(existingOrders));
+      const response = await api.post('/sales', {
+        customer: {
+          name: customer.name.trim(),
+          cpf: customer.cpf,
+          email: customer.email.trim().toLowerCase(),
+          phone: customer.phone,
+        },
+        items: cart.map(item => ({ productId: item.id, quantity: item.quantity })),
+        paymentMethod,
+      });
 
-      // Aqui você pode chamar sua API:
-      // await fetch('/api/orders', { method: 'POST', body: JSON.stringify(order) });
+      const sale = response.data?.sale;
+      const orderId = sale?.id ? `PDG-${sale.id}` : `PDG-${Date.now().toString().slice(-6)}`;
+      const serverItems = Array.isArray(sale?.items) ? sale.items : [];
+      const itemsText = serverItems.map((row: { product?: { name?: string; value?: number | string }; product_id?: number }) => {
+        const product = row.product || {};
+        return `• ${product.name || 'Produto'} - R$ ${Number(product.value || 0).toFixed(2).replace('.', ',')}`;
+      }).join('\n');
+      const serverTotal = Number(response.data?.total ?? cartTotal);
+      const message =
+        `*Novo pedido ${orderId}*\n\n` +
+        `*Cliente:*\nNome: ${customer.name}\nCPF: ${customer.cpf}\nE-mail: ${customer.email}\nContato: ${customer.phone}\n\n` +
+        `*Itens:*\n${itemsText}\n\n` +
+        `*Total:* R$ ${serverTotal.toFixed(2).replace('.', ',')}\n` +
+        `*Forma de pagamento:* ${paymentMethod}`;
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      if (whatsappWindow) whatsappWindow.location.href = whatsappUrl;
+      else window.location.href = whatsappUrl;
+
+      clearCart();
+      setIsCheckoutOpen(false);
+      setIsCartOpen(false);
+      setCustomer({ name: '', cpf: '', email: '', phone: '' });
+      setPaymentMethod('Pix');
+      setErrors({});
     } catch (err) {
-      console.error('Erro ao salvar pedido:', err);
+      whatsappWindow?.close();
+      setOrderError(axios.isAxiosError(err)
+        ? err.response?.data?.message || 'Não foi possível registrar o pedido. Tente novamente.'
+        : 'Não foi possível registrar o pedido. Tente novamente.');
+    } finally {
+      setSubmittingOrder(false);
     }
-
-    const itemsText = cart
-      .map(
-        (item) =>
-          `• ${item.quantity}x ${item.name} - R$ ${(item.price * item.quantity)
-            .toFixed(2)
-            .replace('.', ',')}`
-      )
-      .join('\n');
-
-    const message =
-      `*Novo Pedido ${orderId}*\n\n` +
-      `*Cliente:*\n` +
-      `Nome: ${customer.name}\n` +
-      `CPF: ${customer.cpf}\n` +
-      `E-mail: ${customer.email}\n` +
-      `Contato: ${customer.phone}\n\n` +
-      `*Itens:*\n${itemsText}\n\n` +
-      `*Total:* R$ ${cartTotal.toFixed(2).replace('.', ',')}\n` +
-      `*Forma de pagamento:* ${paymentMethod}`;
-
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-
-    clearCart();
-    setIsCheckoutOpen(false);
-    setIsCartOpen(false);
-    setCustomer({ name: '', cpf: '', email: '', phone: '' });
-    setPaymentMethod('Pix');
-    setErrors({});
   };
 
   return (
@@ -274,10 +293,8 @@ export default function VitrinePage() {
       <header className="border-b border-black/10 sticky top-0 bg-white z-30">
         <div className="max-w-7xl mx-auto flex items-center justify-between p-4 md:p-6">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-              e
-            </div>
-            <span className="font-bold text-xl">elo</span>
+            <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">P</div>
+            <span className="font-bold text-xl">Pratas da Gabi</span>
           </div>
           <nav className="hidden md:flex gap-6 text-sm text-gray-600">
             <a href="#" className="hover:text-gray-900">Coleções</a>
@@ -331,7 +348,7 @@ export default function VitrinePage() {
           <div>
             <h2 className="text-2xl font-bold mb-1">Encontre sua nova peça</h2>
             <p className="text-sm text-gray-500">
-              {filtered.length} bijuterias selecionadas para você
+              {productsLoading ? 'Carregando catálogo...' : `${filtered.length} produtos disponíveis para você`}
             </p>
           </div>
           <div className="relative w-full md:w-64">
@@ -363,6 +380,8 @@ export default function VitrinePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {productsError && <p role="alert" className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{productsError}</p>}
+          {!productsLoading && !productsError && filtered.length === 0 && <p className="py-12 text-center text-gray-500">Nenhum produto disponível nesta categoria.</p>}
           {filtered.map((p) => (
             <div key={p.id} className="group shadow-xl p-2 rounded-lg">
               <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-4">
@@ -413,7 +432,7 @@ export default function VitrinePage() {
 
       <footer className="border-t border-black/10 py-6">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 px-6 text-xs text-gray-500">
-          <span>© 2026 Elo Studio. Todos os direitos reservados.</span>
+          <span>© 2026 Pratas da Gabi. Todos os direitos reservados.</span>
           <span>Feito para simplificar o seu dia.</span>
         </div>
       </footer>
@@ -627,6 +646,7 @@ export default function VitrinePage() {
                 </div>
               </div>
 
+              {orderError && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{orderError}</p>}
               <div className="border-t border-black/10 pt-4">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-500">Itens</span>
@@ -640,9 +660,10 @@ export default function VitrinePage() {
 
               <button
                 onClick={finalizeOrder}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-md font-medium"
+                disabled={submittingOrder}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white py-3 rounded-md font-medium"
               >
-                Finalizar e enviar no WhatsApp
+                {submittingOrder ? 'Registrando pedido...' : 'Finalizar e enviar no WhatsApp'}
               </button>
             </div>
           </div>
