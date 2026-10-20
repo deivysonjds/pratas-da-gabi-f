@@ -86,7 +86,7 @@ export function mapSale(raw: Record<string, any>): Sale {
     total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
     date: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('pt-BR') : '—',
     status: statusLabel(raw.status),
-    paymentMethod: String(raw.paymentMethod || ''),
+    paymentMethod: String(raw.paymentMethod || raw.payment_method || ''),
     customer: {
       cpf: String(client.cpf || ''),
       email: String(client.email || ''),
@@ -99,5 +99,7 @@ export function mapSale(raw: Record<string, any>): Sale {
 export function unwrapList<T = any>(payload: any): T[] {
   if (Array.isArray(payload)) return payload as T[];
   if (Array.isArray(payload?.data)) return payload.data as T[];
+  if (Array.isArray(payload?.data?.data)) return payload.data.data as T[];
+  if (Array.isArray(payload?.rows)) return payload.rows as T[];
   return [];
 }
