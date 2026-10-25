@@ -346,7 +346,7 @@ export default function VendasPage() {
     try {
       // Ajuste esta rota se o backend usar outro endpoint.
       // O backend atualiza a venda pela rota genérica PATCH /sales/:id.
-      await api.patch(`/sales/${selectedSale.id}`, {
+      await api.patch(`/sales/${selectedSale.id}/status`, {
         status: newSaleStatus,
       });
 
@@ -379,7 +379,7 @@ export default function VendasPage() {
     try {
       // Ajuste esta rota se o backend usar outro endpoint.
       // Installment usa is_paid (boolean), não um campo status.
-      await api.patch(`/installments/${installmentId}`, {
+      await api.patch(`/installments/${installmentId}/status`, {
         is_paid: status === 'PAID',
       });
 

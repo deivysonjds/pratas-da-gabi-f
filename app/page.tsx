@@ -628,7 +628,7 @@ export default function VitrinePage() {
                   Forma de pagamento
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito'].map(
+                  {['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'parcelado'].map(
                     (method) => (
                       <button
                         key={method}
