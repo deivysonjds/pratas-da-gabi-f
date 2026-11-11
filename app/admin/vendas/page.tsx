@@ -77,7 +77,7 @@ function normalizeInstallment(item: any, index: number): Installment {
       item.installmentValue ??
       item.installment_value ??
       0
-    ),
+    ) / 100,
     status: item.is_paid === true || String(item.status ?? '').toUpperCase() === 'PAID' ? 'PAID' : 'PENDING',
   };
 }
@@ -99,6 +99,12 @@ export default function VendasPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [view, setView] = useState<'sales' | 'installments'>('sales');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+  const [contactFilter, setContactFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -121,6 +127,17 @@ export default function VendasPage() {
   const [notice, setNotice] = useState('');
   const [detailError, setDetailError] = useState('');
   const [detailNotice, setDetailNotice] = useState('');
+
+  // Calcula o período inicial somente após a montagem no navegador.
+  useEffect(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    setStartDate(`${year}-${month}-01`);
+    setEndDate(`${year}-${month}-${day}`);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,6 +179,18 @@ export default function VendasPage() {
     void load();
   }, [load]);
 
+  const filteredSales = useMemo(() => sales.filter(sale => {
+    const date = sale.createdAt?.slice(0,10) || '';
+    const status = sale.status === 'pago' ? 'PAID' : sale.status === 'cancelado' ? 'CANCELED' : 'PENDING';
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate) &&
+      sale.clientName.toLowerCase().includes(nameFilter.toLowerCase()) &&
+      String(sale.customer?.phone || '').replace(/\D/g,'').includes(contactFilter.replace(/\D/g,'')) &&
+      (!statusFilter || status === statusFilter);
+  }), [sales,startDate,endDate,nameFilter,contactFilter,statusFilter]);
+  const periodInstallments = useMemo(() => filteredSales.flatMap(sale => (sale.installments || []).filter(i => {
+    const date = i.dueDate || sale.createdAt?.slice(0,10) || '';
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  }).map(i => ({ sale, installment: i }))), [filteredSales,startDate,endDate]);
   const selectedProduct = products.find(
     product => product.id === Number(selectedProductId)
   );
@@ -250,15 +279,16 @@ export default function VendasPage() {
       const saleInstallments = paymentMethod === 'Parcelado'
         ? Array.from({ length: installmentCount }, (_, index) => ({
             number: index + 1,
-            amount: Math.round((total / installmentCount + Number.EPSILON) * 100) / 100,
+            amount: Math.floor(Math.round(total * 100) / installmentCount),
             is_paid: false,
+            due_date: (() => { const d = new Date(); return new Date(Date.UTC(d.getFullYear(), d.getMonth() + index + 1, d.getDate())).toISOString().slice(0,10); })(),
           }))
         : [];
 
       // Ajusta a última parcela para que a soma corresponda exatamente ao total.
       if (saleInstallments.length) {
         const previousTotal = saleInstallments.slice(0, -1).reduce((sum, installment) => sum + installment.amount, 0);
-        saleInstallments[saleInstallments.length - 1].amount = Math.round((total - previousTotal + Number.EPSILON) * 100) / 100;
+        saleInstallments[saleInstallments.length - 1].amount = Math.round(total * 100) - previousTotal;
       }
 
       await api.post('/sales/complete', {
@@ -479,7 +509,7 @@ export default function VendasPage() {
                 <option value="">Selecione um cliente</option>
                 {clients.map(client => (
                   <option key={client.id} value={client.id}>
-                    {client.name} · {client.cpf}
+                    {client.name} 
                   </option>
                 ))}
               </select>
@@ -664,12 +694,20 @@ export default function VendasPage() {
           <div>
             <h2 className="text-xl font-bold">Histórico de vendas</h2>
             <p className="text-sm text-gray-500">
-              {sales.length} registro(s)
+              {view === 'sales' ? filteredSales.length : periodInstallments.length} registro(s)
             </p>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <label className="text-xs">Início<input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="block w-full border rounded p-2" /></label>
+          <label className="text-xs">Fim<input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="block w-full border rounded p-2" /></label>
+          <label className="text-xs">Cliente<input value={nameFilter} onChange={e=>setNameFilter(e.target.value)} placeholder="Nome" className="block w-full border rounded p-2" /></label>
+          <label className="text-xs">Contato<input value={contactFilter} onChange={e=>setContactFilter(e.target.value)} placeholder="Telefone" className="block w-full border rounded p-2" /></label>
+          <label className="text-xs">Status<select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="block w-full border rounded p-2"><option value="">Todos</option><option value="PENDING">Pendente</option><option value="PAID">Pago</option><option value="CANCELED">Cancelado</option></select></label>
+        </div>
+        <div className="flex gap-2 mb-4"><button onClick={()=>setView('sales')} className={`px-4 py-2 rounded border ${view==='sales'?'bg-blue-200':''}`}>Vendas</button><button onClick={()=>setView('installments')} className={`px-4 py-2 rounded border ${view==='installments'?'bg-blue-200':''}`}>Parcelas</button></div>
+        {view === 'installments' ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th className="py-3">Venda</th><th>Cliente</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Detalhes</th></tr></thead><tbody>{periodInstallments.map(({sale,installment})=><tr key={`${sale.id}-${installment.number}`} className="border-t"><td className="py-3">#{sale.id}</td><td>{sale.clientName}</td><td>{installment.number}</td><td>{money(installment.amount)}</td><td>{installment.dueDate || '—'}</td><td>{installment.paid?'Pago':'Pendente'}</td><td><button onClick={()=>void openSaleDetails(sale)} className="text-blue-600">Ver</button></td></tr>)}{!periodInstallments.length && <tr><td colSpan={7} className="py-5 text-center">Nenhuma parcela no período.</td></tr>}</tbody></table></div> : <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead className="border-b font-medium text-gray-500">
               <tr>
@@ -691,7 +729,7 @@ export default function VendasPage() {
                   </td>
                 </tr>
               ) : (
-                [...sales].reverse().map(sale => (
+                [...filteredSales].reverse().map(sale => (
                   <tr key={sale.id}>
                     <td className="py-3">#{sale.id}</td>
                     <td className="py-3 font-medium">
@@ -725,7 +763,7 @@ export default function VendasPage() {
                 ))
               )}
 
-              {!loading && !sales.length && (
+              {!loading && !filteredSales.length && (
                 <tr>
                   <td
                     colSpan={7}
@@ -737,7 +775,7 @@ export default function VendasPage() {
               )}
             </tbody>
           </table>
-        </div>
+        </div>}
       </section>
 
       {selectedSale && (
@@ -814,13 +852,6 @@ export default function VendasPage() {
                         <p className="text-xs text-gray-500">Cliente</p>
                         <p className="font-medium">
                           {selectedSale.clientName || 'Não informado'}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-500">CPF</p>
-                        <p className="font-medium">
-                          {selectedSale.customer?.cpf || 'Não informado'}
                         </p>
                       </div>
 

@@ -57,7 +57,6 @@ export function SaleSuccessModal({ isOpen, onClose, sale, onNewSale }: SaleSucce
 
         <p className="text-xs text-gray-400 uppercase mb-1">Cliente</p>
         <p className="font-medium text-sm">{sale.clientName}</p>
-        <p className="text-xs text-gray-500 mb-4">CPF: 529.982.247-25</p>
 
         <div className="space-y-2">
           {sale.items.map((item, i) => (

@@ -5,6 +5,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
 import { api } from '@/services/api';
 import { Product } from '@/types';
+import { formatBRL, fromDigits } from '@/utils/money';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -19,14 +20,14 @@ export function ProductFormModal({ isOpen, onClose, onSaved, initialData }: Prod
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', description: '', price: '', stock: '', category: 'Brincos' });
+  const [form, setForm] = useState({ name: '', description: '', price: formatBRL(0), stock: '', category: 'Brincos' });
 
   useEffect(() => {
     if (initialData) {
-      setForm({ name: initialData.name, description: initialData.description || '', price: String(initialData.price), stock: String(initialData.stock), category: initialData.category || 'Brincos' });
+      setForm({ name: initialData.name, description: initialData.description || '', price: formatBRL(initialData.price), stock: String(initialData.stock), category: initialData.category || 'Brincos' });
       setPreview(initialData.imageUrl || null);
     } else {
-      setForm({ name: '', description: '', price: '', stock: '', category: 'Brincos' });
+      setForm({ name: '', description: '', price: formatBRL(0), stock: '', category: 'Brincos' });
       setPreview(null);
     }
     setImageFile(null);
@@ -34,7 +35,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, initialData }: Prod
   }, [initialData, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.name === 'price' ? formatBRL(fromDigits(e.target.value)) : e.target.value });
   };
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,9 +57,9 @@ export function ProductFormModal({ isOpen, onClose, onSaved, initialData }: Prod
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-    const value = Number(form.price);
+    const value = Number(form.price.replace(/[^\d]/g, ''));
     const stock = Number(form.stock);
-    if (!form.name.trim() || !form.description.trim() || !Number.isFinite(value) || value < 0 || !Number.isInteger(stock) || stock < 0) {
+    if (!form.name.trim() || !form.description.trim() || !Number.isSafeInteger(value) || value < 0 || value > 2147483647 || !Number.isInteger(stock) || stock < 0) {
       setError('Preencha os campos corretamente. Preço e estoque não podem ser negativos.');
       return;
     }
@@ -92,7 +93,7 @@ export function ProductFormModal({ isOpen, onClose, onSaved, initialData }: Prod
         <div><label className="block text-sm font-medium mb-1">Nome do produto *</label><input name="name" value={form.name} onChange={handleChange} required maxLength={120} className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" /></div>
         <div><label className="block text-sm font-medium mb-1">Descrição *</label><textarea name="description" value={form.description} onChange={handleChange} rows={3} required maxLength={2000} className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" /></div>
         <div className="grid grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium mb-1">Preço de venda (R$) *</label><input name="price" type="number" min="0" step="0.01" value={form.price} onChange={handleChange} required className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" /></div>
+          <div><label className="block text-sm font-medium mb-1">Preço de venda (R$) *</label><input name="price" type="text" inputMode="numeric" value={form.price} onChange={handleChange} required className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" /></div>
           <div><label className="block text-sm font-medium mb-1">Estoque *</label><input name="stock" type="number" min="0" step="1" value={form.stock} onChange={handleChange} required className="w-full border border-black/10 rounded-md px-3 py-2 text-sm" /></div>
         </div>
         <div><label className="block text-sm font-medium mb-1">Categoria *</label><select name="category" value={form.category} onChange={handleChange} className="w-full border border-black/10 rounded-md px-3 py-2 text-sm bg-white"><option>Brincos</option><option>Colares</option><option>Pulseiras</option><option>Anéis</option><option>Conjuntos</option><option>Outros</option></select></div>

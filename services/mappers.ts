@@ -20,7 +20,7 @@ export function mapProduct(raw: ApiProduct): Product {
     code: `PR-${String(raw.id).padStart(4, '0')}`,
     name: raw.name,
     description: raw.description || '',
-    price: Number(raw.value),
+    price: Number(raw.value) / 100,
     stock: Number(raw.stock),
     category,
     imageUrl: raw.image_url || '',
@@ -35,12 +35,9 @@ export function mapClient(raw: Record<string, unknown>): Client {
     const date = new Date(createdAt);
     if (!Number.isNaN(date.getTime())) createdLabel = date.toLocaleDateString('pt-BR');
   }
-  const cpfDigits = String(raw.cpf || '').replace(/\D/g, '');
-  const formattedCpf = cpfDigits.length === 11 ? cpfDigits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : String(raw.cpf || '');
   return {
     id: Number(raw.id),
     name: String(raw.name || ''),
-    cpf: formattedCpf,
     email: String(raw.email || ''),
     contact: String(raw.contact || ''),
     createdAt: createdLabel,
@@ -66,15 +63,18 @@ export function mapSale(raw: Record<string, any>): Sale {
       productId,
       name: String(product.name || 'Produto removido'),
       imageUrl: String(product.image_url || ''),
-      price: Number(product.value || 0),
+      price: Number(row.unit_price ?? product.value ?? 0) / 100,
       quantity: 1,
     });
   }
   const items = [...aggregated.values()];
   const installments = (raw.installments || []).map((item: Record<string, any>) => ({
+    id: Number(item.id),
     number: Number(item.number),
+    dueDate: String(item.due_date || ''),
+    paidAt: String(item.paid_at || ''),
     dueLabel: item.due_date ? new Date(item.due_date).toLocaleDateString('pt-BR') : `Parcela ${item.number}`,
-    amount: Number(item.amount || 0),
+    amount: Number(item.amount || 0) / 100,
     paid: Boolean(item.is_paid),
   }));
   const date = raw.created_at ? new Date(raw.created_at) : null;
@@ -83,16 +83,19 @@ export function mapSale(raw: Record<string, any>): Sale {
     id: String(raw.id),
     clientName: String(client.name || 'Cliente'),
     items,
-    total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    total: raw.total_amount == null ? items.reduce((sum, item) => sum + item.price * item.quantity, 0) : Number(raw.total_amount) / 100,
     date: date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('pt-BR') : '—',
     status: statusLabel(raw.status),
     paymentMethod: String(raw.paymentMethod || raw.payment_method || ''),
     customer: {
-      cpf: String(client.cpf || ''),
       email: String(client.email || ''),
       phone: String(client.contact || ''),
     },
     installments,
+    createdAt: String(raw.created_at || ''),
+    paidAt: String(raw.paid_at || ''),
+    canceledAt: String(raw.canceled_at || ''),
+    dueDate: String(raw.due_date || ''),
   };
 }
 

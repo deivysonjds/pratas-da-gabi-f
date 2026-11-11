@@ -18,21 +18,11 @@ type CartItem = {
 
 type CustomerData = {
   name: string;
-  cpf: string;
   email: string;
   phone: string;
 };
 
 // Máscaras
-const maskCPF = (value: string) => {
-  return value
-    .replace(/\D/g, '')
-    .slice(0, 11)
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-};
-
 const maskPhone = (value: string) => {
   return value
     .replace(/\D/g, '')
@@ -42,24 +32,6 @@ const maskPhone = (value: string) => {
 };
 
 // Validações
-const isValidCPF = (cpf: string) => {
-  const digits = cpf.replace(/\D/g, '');
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1+$/.test(digits)) return false;
-
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let rest = (sum * 10) % 11;
-  if (rest === 10) rest = 0;
-  if (rest !== parseInt(digits[9])) return false;
-
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  rest = (sum * 10) % 11;
-  if (rest === 10) rest = 0;
-  return rest === parseInt(digits[10]);
-};
-
 const isValidEmail = (email: string) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
@@ -79,13 +51,13 @@ export default function VitrinePage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('Pix');
+  const [installmentCount, setInstallmentCount] = useState(2);
   const [selectedQty, setSelectedQty] = useState<Record<string, number>>({});
   const [isHydrated, setIsHydrated] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: '',
-    cpf: '',
     email: '',
     phone: '',
   });
@@ -199,10 +171,6 @@ export default function VitrinePage() {
     if (errors.name) setErrors((prev) => ({ ...prev, name: '' }));
   };
 
-  const handleCPFChange = (value: string) => {
-    setCustomer((prev) => ({ ...prev, cpf: maskCPF(value) }));
-    if (errors.cpf) setErrors((prev) => ({ ...prev, cpf: '' }));
-  };
 
   const handleEmailChange = (value: string) => {
     setCustomer((prev) => ({ ...prev, email: value }));
@@ -219,9 +187,6 @@ export default function VitrinePage() {
 
     if (!customer.name.trim() || customer.name.trim().length < 3) {
       newErrors.name = 'Informe seu nome completo';
-    }
-    if (!isValidCPF(customer.cpf)) {
-      newErrors.cpf = 'CPF inválido';
     }
     if (!isValidEmail(customer.email)) {
       newErrors.email = 'E-mail inválido';
@@ -245,12 +210,12 @@ export default function VitrinePage() {
       const response = await api.post('/sales', {
         customer: {
           name: customer.name.trim(),
-          cpf: customer.cpf,
           email: customer.email.trim().toLowerCase(),
           phone: customer.phone,
         },
         items: cart.map(item => ({ productId: item.id, quantity: item.quantity })),
         paymentMethod,
+        installmentCount: paymentMethod === 'Parcelado' ? installmentCount : 1,
       });
 
       const sale = response.data?.sale;
@@ -258,12 +223,12 @@ export default function VitrinePage() {
       const serverItems = Array.isArray(sale?.items) ? sale.items : [];
       const itemsText = serverItems.map((row: { product?: { name?: string; value?: number | string }; product_id?: number }) => {
         const product = row.product || {};
-        return `• ${product.name || 'Produto'} - R$ ${Number(product.value || 0).toFixed(2).replace('.', ',')}`;
+        return `• ${product.name || 'Produto'} - R$ ${(Number(product.value || 0) / 100).toFixed(2).replace('.', ',')}`;
       }).join('\n');
-      const serverTotal = Number(response.data?.total ?? cartTotal);
+      const serverTotal = response.data?.total == null ? cartTotal : Number(response.data.total) / 100;
       const message =
         `*Novo pedido ${orderId}*\n\n` +
-        `*Cliente:*\nNome: ${customer.name}\nCPF: ${customer.cpf}\nE-mail: ${customer.email}\nContato: ${customer.phone}\n\n` +
+        `*Cliente:*\nNome: ${customer.name}\nE-mail: ${customer.email}\nContato: ${customer.phone}\n\n` +
         `*Itens:*\n${itemsText}\n\n` +
         `*Total:* R$ ${serverTotal.toFixed(2).replace('.', ',')}\n` +
         `*Forma de pagamento:* ${paymentMethod}`;
@@ -274,7 +239,7 @@ export default function VitrinePage() {
       clearCart();
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
-      setCustomer({ name: '', cpf: '', email: '', phone: '' });
+      setCustomer({ name: '', email: '', phone: '' });
       setPaymentMethod('Pix');
       setErrors({});
     } catch (err) {
@@ -296,12 +261,6 @@ export default function VitrinePage() {
             <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">P</div>
             <span className="font-bold text-xl">Pratas da Gabi</span>
           </div>
-          <nav className="hidden md:flex gap-6 text-sm text-gray-600">
-            <a href="#" className="hover:text-gray-900">Coleções</a>
-            <a href="#" className="hover:text-gray-900">Brincos</a>
-            <a href="#" className="hover:text-gray-900">Colares</a>
-            <a href="#" className="hover:text-gray-900">Pulseiras</a>
-          </nav>
           <button
             onClick={() => setIsCartOpen(true)}
             className="relative p-2 hover:bg-gray-100 rounded-md transition-colors"
@@ -568,24 +527,6 @@ export default function VitrinePage() {
                   <p className="text-xs text-red-500 mt-1">{errors.name}</p>
                 )}
               </div>
-
-              {/* CPF */}
-              <div>
-                <label className="text-sm font-medium block mb-1">CPF *</label>
-                <input
-                  value={customer.cpf}
-                  onChange={(e) => handleCPFChange(e.target.value)}
-                  placeholder="000.000.000-00"
-                  inputMode="numeric"
-                  className={`w-full border border-black/10 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                    errors.cpf ? 'border-red-400/10' : ''
-                  }`}
-                />
-                {errors.cpf && (
-                  <p className="text-xs text-red-500 mt-1">{errors.cpf}</p>
-                )}
-              </div>
-
               {/* Email */}
               <div>
                 <label className="text-sm font-medium block mb-1">E-mail *</label>
@@ -628,7 +569,7 @@ export default function VitrinePage() {
                   Forma de pagamento
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'parcelado'].map(
+                  {['Pix', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Parcelado'].map(
                     (method) => (
                       <button
                         key={method}
@@ -646,6 +587,12 @@ export default function VitrinePage() {
                 </div>
               </div>
 
+              {paymentMethod === 'Parcelado' && <div>
+                <label className="block text-sm font-medium mb-1">Quantidade de parcelas</label>
+                <select value={installmentCount} onChange={e => setInstallmentCount(Number(e.target.value))} className="w-full rounded-md border px-3 py-2">
+                  {Array.from({length:12},(_,i)=>i+1).map(n=><option key={n} value={n}>{n}x de {new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(cartTotal/n)}</option>)}
+                </select>
+              </div>}
               {orderError && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{orderError}</p>}
               <div className="border-t border-black/10 pt-4">
                 <div className="flex justify-between text-sm mb-1">

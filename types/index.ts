@@ -13,7 +13,6 @@ export interface Product {
 export interface Client {
   id: number;
   name: string;
-  cpf: string;
   email: string;
   contact?: string;
   createdAt: string;
@@ -36,11 +35,14 @@ export interface Sale {
   status: 'pago' | 'pendente pagamento' | 'cancelado';
   paymentMethod?: string;
   customer?: {
-    cpf?: string;
     email?: string;
     phone?: string;
   };
   installments?: Installment[];
+  createdAt?: string;
+  paidAt?: string;
+  canceledAt?: string;
+  dueDate?: string;
 }
 
 type Installment = {
@@ -48,4 +50,7 @@ type Installment = {
   dueLabel: string;
   amount: number;
   paid: boolean;
+  id?: number;
+  dueDate?: string;
+  paidAt?: string;
 };

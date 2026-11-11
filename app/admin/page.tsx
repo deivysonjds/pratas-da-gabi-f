@@ -59,9 +59,9 @@ export default function DashboardPage() {
     try {
       const [productResponse, clientResponse, saleResponse] =
         await Promise.all([
-          api.get('/products?limit=100'),
-          api.get('/clients?limit=100'),
-          api.get('/sales?limit=100'),
+          api.get('/products?'),
+          api.get('/clients?'),
+          api.get('/sales?'),
         ]);
 
       setProducts(unwrapList(productResponse.data).map(mapProduct));
@@ -138,6 +138,39 @@ export default function DashboardPage() {
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 6);
   }, [filteredSales]);
+
+  // Agrupa o faturamento das vendas pagas por dia no período selecionado.
+  const salesHistory = useMemo(() => {
+    if (!startDate || !endDate || startDate > endDate) return [];
+
+    const totals = new Map<string, { count: number; revenue: number }>();
+    for (const sale of filteredSales) {
+      if (sale.status !== 'pago') continue;
+      const [day, month, year] = sale.date.split('/');
+      const key = `${year}-${month}-${day}`;
+      const current = totals.get(key) ?? { count: 0, revenue: 0 };
+      totals.set(key, {
+        count: current.count + 1,
+        revenue: current.revenue + sale.total,
+      });
+    }
+
+    const result: { date: string; count: number; revenue: number }[] = [];
+    const cursor = new Date(`${startDate}T12:00:00`);
+    const last = new Date(`${endDate}T12:00:00`);
+    if (Number.isNaN(cursor.getTime()) || Number.isNaN(last.getTime())) return [];
+
+    // Evita gerar milhares de barras em intervalos excessivamente longos.
+    for (let i = 0; cursor <= last && i < 366; i++) {
+      const date = getLocalDateString(cursor);
+      const entry = totals.get(date) ?? { count: 0, revenue: 0 };
+      result.push({ date, ...entry });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }, [filteredSales, startDate, endDate]);
+
+  const maxDailyRevenue = Math.max(1, ...salesHistory.map(day => day.revenue));
 
   const maxQty = Math.max(
     1,
@@ -261,6 +294,41 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <section className="bg-white border border-black/10 rounded-lg p-6 mb-6">
+        <h2 className="font-semibold mb-1">Histórico de vendas no período</h2>
+        <p className="text-xs text-gray-500 mb-5">
+          Faturamento diário das vendas pagas, de acordo com as datas selecionadas
+        </p>
+        {salesHistory.length ? (
+          <div className="overflow-x-auto">
+            <div
+              className="flex items-end gap-2 h-56 border-b border-gray-200 pb-1"
+              style={{ minWidth: `${Math.max(560, salesHistory.length * 30)}px` }}
+              role="img"
+              aria-label="Gráfico de faturamento diário das vendas pagas"
+            >
+              {salesHistory.map(day => (
+                <div key={day.date} className="flex-1 min-w-5 h-full flex flex-col justify-end items-center group">
+                  <div className="text-[10px] text-gray-500 mb-1 opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                    {money(day.revenue)}
+                  </div>
+                  <div
+                    className="w-full max-w-9 rounded-t bg-blue-300 hover:bg-blue-500 transition-colors"
+                    style={{ height: `${day.revenue > 0 ? Math.max(3, (day.revenue / maxDailyRevenue) * 90) : 0}%` }}
+                    title={`${day.date}: ${money(day.revenue)} · ${day.count} venda(s) paga(s)`}
+                  />
+                  <span className="text-[10px] text-gray-500 mt-2 whitespace-nowrap">
+                    {day.date.slice(8, 10)}/{day.date.slice(5, 7)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Selecione um período válido para visualizar o histórico.</p>
+        )}
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white border border-black/10 rounded-lg p-6">
